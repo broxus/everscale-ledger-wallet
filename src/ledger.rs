@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::remote_wallet::{RemoteWalletError, RemoteWalletManager};
 use ed25519_dalek::{PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 use {
@@ -62,6 +64,7 @@ mod commands {
     pub const SIGN_TRANSACTION: u8 = 0x05;
 }
 
+#[derive(Clone, Copy)]
 pub enum WalletType {
     WalletV3 = 0,
     EverWallet = 1,
@@ -71,6 +74,42 @@ pub enum WalletType {
     BridgeMultisig = 5,
     Surf = 6,
     Multisig2 = 7,
+}
+
+impl TryFrom<u32> for WalletType {
+    type Error = anyhow::Error;
+
+    fn try_from(v: u32) -> Result<Self, Self::Error> {
+        match v {
+            0 => Ok(WalletType::WalletV3),
+            1 => Ok(WalletType::EverWallet),
+            2 => Ok(WalletType::SafeMultisig),
+            3 => Ok(WalletType::SafeMultisig24h),
+            4 => Ok(WalletType::SetcodeMultisig),
+            5 => Ok(WalletType::BridgeMultisig),
+            6 => Ok(WalletType::Surf),
+            7 => Ok(WalletType::Multisig2),
+            _ => anyhow::bail!("Unknown wallet type"),
+        }
+    }
+}
+
+impl FromStr for WalletType {
+    type Err = String;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "WalletV3" => Ok(WalletType::WalletV3),
+            "EverWallet" => Ok(WalletType::EverWallet),
+            "SafeMultisig" => Ok(WalletType::SafeMultisig),
+            "SafeMultisig24h" => Ok(WalletType::SafeMultisig24h),
+            "SetcodeMultisig" => Ok(WalletType::SetcodeMultisig),
+            "BridgeMultisig" => Ok(WalletType::BridgeMultisig),
+            "Surf" => Ok(WalletType::Surf),
+            "Multisig2" => Ok(WalletType::Multisig2),
+            _ => Err("Unknown wallet type".to_string()),
+        }
+    }
 }
 
 /// Ledger Wallet device
@@ -232,11 +271,7 @@ impl LedgerWallet {
     ) -> Result<Vec<u8>, RemoteWalletError> {
         self.write(command, p1, p2, data)?;
         if p1 == P1_CONFIRM && is_last_part(p2) {
-            println!(
-                "Waiting for your approval on {} {}",
-                self.name(),
-                self.pretty_path
-            );
+            println!("Waiting for your approval on {}", self.name());
             let result = self.read()?;
             println!("{}Approved", CHECK_MARK);
             Ok(result)

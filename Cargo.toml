@@ -7,9 +7,9 @@ publish = false
 license-file = "LICENSE"
 
 [dependencies]
+anyhow = "1.0.66"
 console = "0.15.0"
 dialoguer = "0.10.2"
-ed25519-dalek = "1.0.1"
 hidapi = { version = "1.4.1", default-features = false, optional = true }
 hex = "0.4.3"
 log = "0.4.17"
@@ -20,6 +20,8 @@ qstring = "0.7.2"
 semver = "1.0"
 thiserror = "1.0"
 uriparse = "0.6.4"
+
+ed25519-dalek = { git = "https://github.com/broxus/ed25519-dalek.git" }
 
 [features]
 default = ["linux-static-hidraw"]
