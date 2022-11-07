@@ -446,7 +446,7 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
 
         payload.extend_from_slice(data);
 
-        let result = self.send_apdu(commands::SIGN_TRANSACTION, P1_NON_CONFIRM, 0, &payload)?;
+        let result = self.send_apdu(commands::SIGN_TRANSACTION, P1_CONFIRM, 0, &payload)?;
 
         if result.len() != SIGNATURE_LENGTH + 1 {
             return Err(RemoteWalletError::Protocol(
