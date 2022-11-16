@@ -425,13 +425,15 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
     fn sign_transaction(
         &self,
         account: u32,
-        wallet_type: WalletType,
+        origin_wallet_type: WalletType,
+        current_wallet_type: WalletType,
         decimals: u8,
         ticker: &str,
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
         let mut payload = account.to_be_bytes().to_vec();
-        payload.extend_from_slice(&(wallet_type as u32).to_be_bytes());
+        payload.extend_from_slice(&(origin_wallet_type as u32).to_be_bytes());
+        payload.extend_from_slice(&(current_wallet_type as u32).to_be_bytes());
         payload.extend_from_slice(&[decimals]);
 
         let ticker = ticker.as_bytes();

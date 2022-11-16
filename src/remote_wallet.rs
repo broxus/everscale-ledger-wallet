@@ -216,7 +216,8 @@ pub trait RemoteWallet<T> {
     fn sign_transaction(
         &self,
         account: u32,
-        wallet_type: WalletType,
+        origin_wallet_type: WalletType,
+        current_wallet_type: WalletType,
         decimals: u8,
         ticker: &str,
         data: &[u8],
