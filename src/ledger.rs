@@ -74,6 +74,7 @@ pub enum WalletType {
     BridgeMultisig = 5,
     Surf = 6,
     Multisig2 = 7,
+    Multisig2_1 = 8,
 }
 
 impl TryFrom<u32> for WalletType {
@@ -89,6 +90,7 @@ impl TryFrom<u32> for WalletType {
             5 => Ok(WalletType::BridgeMultisig),
             6 => Ok(WalletType::Surf),
             7 => Ok(WalletType::Multisig2),
+            8 => Ok(WalletType::Multisig2_1),
             _ => anyhow::bail!("Unknown wallet type"),
         }
     }
@@ -107,6 +109,7 @@ impl FromStr for WalletType {
             "BridgeMultisig" => Ok(WalletType::BridgeMultisig),
             "Surf" => Ok(WalletType::Surf),
             "Multisig2" => Ok(WalletType::Multisig2),
+            "Multisig2_1" => Ok(WalletType::Multisig2_1),
             _ => Err("Unknown wallet type".to_string()),
         }
     }
