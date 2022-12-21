@@ -405,7 +405,7 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         confirm_key: bool,
     ) -> Result<Vec<u8>, RemoteWalletError> {
         let mut data = account.to_be_bytes().to_vec();
-        data.extend_from_slice(&(wallet_type as u32).to_be_bytes());
+        data.extend_from_slice(&(wallet_type as u8).to_be_bytes());
 
         let address = self.send_apdu(
             commands::GET_ADDRESS,
@@ -435,8 +435,8 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
         let mut payload = account.to_be_bytes().to_vec();
-        payload.extend_from_slice(&(origin_wallet_type as u32).to_be_bytes());
-        payload.extend_from_slice(&(current_wallet_type as u32).to_be_bytes());
+        payload.extend_from_slice(&(origin_wallet_type as u8).to_be_bytes());
+        payload.extend_from_slice(&(current_wallet_type as u8).to_be_bytes());
         payload.extend_from_slice(&[decimals]);
 
         let ticker = ticker.as_bytes();
