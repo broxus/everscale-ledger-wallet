@@ -451,6 +451,10 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
             ));
         }
 
+        // Strip BOC magic
+        let data = data.strip_prefix(&[0xB5, 0xEE, 0x9C, 0x72]).unwrap_or(data);
+
+        // Append BOC
         payload.extend_from_slice(data);
 
         let result = self.send_apdu(commands::SIGN_TRANSACTION, P1_CONFIRM, 0, &payload)?;
