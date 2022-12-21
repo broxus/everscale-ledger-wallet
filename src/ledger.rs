@@ -434,6 +434,16 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         ticker: &str,
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
+        // Strip BOC magic
+        let data = match data.strip_prefix(&[0xB5, 0xEE, 0x9C, 0x72]) {
+            Some(data) => data,
+            None => {
+                return Err(RemoteWalletError::InvalidInput(
+                    "Unknown BOC tag".to_string(),
+                ))
+            }
+        };
+
         let mut payload = account.to_be_bytes().to_vec();
         payload.extend_from_slice(&[
             origin_wallet_type as u8,
@@ -450,9 +460,6 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
                 "Message to sign is too long".to_string(),
             ));
         }
-
-        // Strip BOC magic
-        let data = data.strip_prefix(&[0xB5, 0xEE, 0x9C, 0x72]).unwrap_or(data);
 
         // Append BOC
         payload.extend_from_slice(data);
