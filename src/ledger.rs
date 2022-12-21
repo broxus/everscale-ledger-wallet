@@ -435,12 +435,14 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
         let mut payload = account.to_be_bytes().to_vec();
-        payload.push(origin_wallet_type as u8);
-        payload.push(current_wallet_type as u8);
-        payload.push(decimals);
+        payload.extend_from_slice(&[
+            origin_wallet_type as u8,
+            current_wallet_type as u8,
+            decimals,
+        ]);
 
         let ticker = ticker.as_bytes();
-        payload.extend_from_slice(&[ticker.len() as u8]);
+        payload.push(ticker.len() as u8);
         payload.extend_from_slice(ticker);
 
         if MAX_CHUNK_SIZE - payload.len() < data.len() {
