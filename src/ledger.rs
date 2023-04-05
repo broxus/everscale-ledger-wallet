@@ -425,13 +425,16 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         Ok(address[1..].to_vec())
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn sign_transaction(
         &self,
         account: u32,
         origin_wallet_type: WalletType,
-        current_wallet_type: WalletType,
         decimals: u8,
         ticker: &str,
+        current_wallet_type: Option<WalletType>,
+        workchain_id: Option<u8>,
+        chain_id: Option<u32>,
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
         // Strip BOC magic
@@ -445,15 +448,35 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         };
 
         let mut payload = account.to_be_bytes().to_vec();
-        payload.extend_from_slice(&[
-            origin_wallet_type as u8,
-            current_wallet_type as u8,
-            decimals,
-        ]);
+        payload.extend_from_slice(&[origin_wallet_type as u8, decimals]);
 
         let ticker = ticker.as_bytes();
         payload.push(ticker.len() as u8);
         payload.extend_from_slice(ticker);
+
+        let mut metadata: u8 = 0;
+        if current_wallet_type.is_some() {
+            metadata |= 1;
+        }
+        if workchain_id.is_some() {
+            metadata |= 2;
+        }
+        if chain_id.is_some() {
+            metadata |= 8;
+        }
+        payload.push(metadata);
+
+        if let Some(current_wallet_type) = current_wallet_type {
+            payload.push(current_wallet_type as u8);
+        }
+
+        if let Some(workchain_id) = workchain_id {
+            payload.push(workchain_id);
+        }
+
+        if let Some(chain_id) = chain_id {
+            payload.extend_from_slice(&chain_id.to_be_bytes());
+        }
 
         if MAX_CHUNK_SIZE - payload.len() < data.len() {
             return Err(RemoteWalletError::InvalidInput(

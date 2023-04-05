@@ -213,13 +213,16 @@ pub trait RemoteWallet<T> {
     }
 
     /// Sign BOC transaction
+    #[allow(clippy::too_many_arguments)]
     fn sign_transaction(
         &self,
         account: u32,
         origin_wallet_type: WalletType,
-        current_wallet_type: WalletType,
         decimals: u8,
         ticker: &str,
+        current_wallet_type: Option<WalletType>,
+        workchain_id: Option<u8>,
+        chain_id: Option<u32>,
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
         unimplemented!();
