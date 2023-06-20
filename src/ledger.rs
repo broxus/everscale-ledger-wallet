@@ -391,13 +391,14 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         }
 
         let mut payload = account.to_be_bytes().to_vec();
-        payload.extend_from_slice(data);
 
         let mut metadata: u8 = 0;
         if chain_id.is_some() {
             metadata |= 8;
         }
         payload.push(metadata);
+
+        payload.extend_from_slice(data);
 
         let result = self.send_apdu(commands::SIGN_MESSAGE, P1_CONFIRM, 0, &payload)?;
 
