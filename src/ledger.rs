@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use crate::remote_wallet::{RemoteWalletError, RemoteWalletManager};
 use ed25519_dalek::{PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 use {
     crate::remote_wallet::{RemoteWallet, RemoteWalletInfo},
@@ -16,6 +15,8 @@ use {
     num_traits::FromPrimitive,
     std::{cmp::min, convert::TryFrom},
 };
+
+use crate::remote_wallet::{RemoteWalletError, RemoteWalletManager};
 
 static CHECK_MARK: Emoji = Emoji("✅ ", "");
 
@@ -430,16 +431,13 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         Ok(address[1..].to_vec())
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn sign_transaction(
         &self,
         account: u32,
         origin_wallet_type: WalletType,
         decimals: u8,
         ticker: &str,
-        current_wallet_type: Option<WalletType>,
-        workchain_id: Option<u8>,
-        chain_id: Option<u32>,
+        meta: SignTransactionMeta,
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
         // Strip BOC magic
@@ -460,26 +458,26 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         payload.extend_from_slice(ticker);
 
         let mut metadata: u8 = 0;
-        if current_wallet_type.is_some() {
+        if meta.current_wallet_type.is_some() {
             metadata |= 1;
         }
-        if workchain_id.is_some() {
+        if meta.workchain_id.is_some() {
             metadata |= 2;
         }
-        if chain_id.is_some() {
+        if meta.chain_id.is_some() {
             metadata |= 8;
         }
         payload.push(metadata);
 
-        if let Some(current_wallet_type) = current_wallet_type {
+        if let Some(current_wallet_type) = meta.current_wallet_type {
             payload.push(current_wallet_type as u8);
         }
 
-        if let Some(workchain_id) = workchain_id {
+        if let Some(workchain_id) = meta.workchain_id {
             payload.push(workchain_id);
         }
 
-        if let Some(chain_id) = chain_id {
+        if let Some(chain_id) = meta.chain_id {
             payload.extend_from_slice(&chain_id.to_be_bytes());
         }
 
@@ -500,6 +498,24 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
             ));
         }
         Ok(Signature::from_bytes(&result[1..])?)
+    }
+}
+
+pub struct SignTransactionMeta {
+    chain_id: Option<u32>,
+    workchain_id: Option<u8>,
+    current_wallet_type: Option<WalletType>,
+}
+
+impl SignTransactionMeta {
+    pub fn new(chain_id: Option<u32>,
+               workchain_id: Option<u8>,
+               current_wallet_type: Option<WalletType>) -> Self {
+        Self {
+            chain_id,
+            workchain_id,
+            current_wallet_type,
+        }
     }
 }
 

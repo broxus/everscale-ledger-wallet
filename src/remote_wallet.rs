@@ -1,8 +1,7 @@
 use {crate::ledger::is_valid_ledger, parking_lot::Mutex};
 use {
     crate::{
-        ledger::LedgerWallet,
-        ledger::WalletType,
+        ledger::{LedgerWallet, WalletType, SignTransactionMeta},
         ledger_error::LedgerError,
         locator::{Locator, LocatorError, Manufacturer},
     },
@@ -217,16 +216,13 @@ pub trait RemoteWallet<T> {
     }
 
     /// Sign BOC transaction
-    #[allow(clippy::too_many_arguments)]
     fn sign_transaction(
         &self,
         account: u32,
         origin_wallet_type: WalletType,
         decimals: u8,
         ticker: &str,
-        current_wallet_type: Option<WalletType>,
-        workchain_id: Option<u8>,
-        chain_id: Option<u32>,
+        meta: SignTransactionMeta,
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
         unimplemented!();
