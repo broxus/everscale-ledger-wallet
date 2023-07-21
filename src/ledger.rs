@@ -65,6 +65,8 @@ mod commands {
     pub const SIGN_TRANSACTION: u8 = 0x05;
 }
 
+pub const SIGN_MAGIC: [u8; 4] = [0xFF, 0xFF, 0xFF, 0xFF];
+
 #[derive(Clone, Copy)]
 pub enum WalletType {
     WalletV3 = 0,
