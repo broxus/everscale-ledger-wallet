@@ -501,6 +501,7 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
     }
 }
 
+#[derive(Clone, Copy, Default)]
 pub struct SignTransactionMeta {
     chain_id: Option<u32>,
     workchain_id: Option<u8>,
