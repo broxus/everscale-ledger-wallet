@@ -198,11 +198,10 @@ pub trait RemoteWallet<T> {
     }
 
     /// Sign message hash
-    fn sign_message_hash(
+    fn sign_message(
         &self,
         account: u32,
         data: &[u8],
-        chain_id: Option<u32>,
     ) -> Result<Signature, RemoteWalletError> {
         unimplemented!();
     }

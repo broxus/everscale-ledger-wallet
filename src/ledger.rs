@@ -378,11 +378,10 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         Ok(PublicKey::from_bytes(&key[1..])?)
     }
 
-    fn sign_message_hash(
+    fn sign_message(
         &self,
         account: u32,
         data: &[u8],
-        chain_id: Option<u32>,
     ) -> Result<Signature, RemoteWalletError> {
         if data.len() != HASH_SIZE {
             return Err(RemoteWalletError::InvalidInput(
@@ -391,12 +390,6 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         }
 
         let mut payload = account.to_be_bytes().to_vec();
-
-        let mut metadata: u8 = 0;
-        if chain_id.is_some() {
-            metadata |= 8;
-        }
-        payload.push(metadata);
 
         payload.extend_from_slice(data);
 
