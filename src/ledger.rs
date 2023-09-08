@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::str::FromStr;
 
 use ed25519_dalek::{PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
@@ -6,7 +7,7 @@ use {
     console::Emoji,
     dialoguer::{theme::ColorfulTheme, Select},
     semver::Version as FirmwareVersion,
-    std::{fmt, sync::Arc},
+    std::fmt,
 };
 use {
     crate::{ledger_error::LedgerError, locator::Manufacturer},
@@ -277,9 +278,13 @@ impl LedgerWallet {
     ) -> Result<Vec<u8>, RemoteWalletError> {
         self.write(command, p1, p2, data)?;
         if p1 == P1_CONFIRM && is_last_part(p2) {
-            println!("Waiting for your approval on {}", self.name());
+            println!(
+                "Waiting for your approval on {} {}",
+                self.name(),
+                self.pretty_path
+            );
             let result = self.read()?;
-            println!("{}Approved", CHECK_MARK);
+            println!("{CHECK_MARK}Approved");
             Ok(result)
         } else {
             self.read()
@@ -333,20 +338,15 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
             .manufacturer_string()
             .and_then(|s| Manufacturer::try_from(s).ok())
             .unwrap_or_default();
-
         let model = dev_info
             .product_string()
             .unwrap_or("Unknown")
             .to_lowercase()
             .replace(' ', "-");
-
         let serial = dev_info.serial_number().unwrap_or("Unknown").to_string();
-
         let host_device_path = dev_info.path().to_string_lossy().to_string();
-
         let version = self.get_firmware_version()?;
         self.version = version;
-
         let pubkey_result = self.get_pubkey(u32::default(), false);
         let (pubkey, error) = match pubkey_result {
             Ok(pubkey) => (pubkey, None),
@@ -483,16 +483,52 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
             payload.extend_from_slice(&chain_id.to_be_bytes());
         }
 
-        if MAX_CHUNK_SIZE - payload.len() < data.len() {
-            return Err(RemoteWalletError::InvalidInput(
-                "Message to sign is too long".to_string(),
-            ));
-        }
+        // Check to see if this data needs to be split up and
+        // sent in chunks.
+        let max_size = MAX_CHUNK_SIZE - payload.len();
+        let empty = vec![];
+        let (data, remaining_data) = if data.len() > max_size {
+            data.split_at(max_size)
+        } else {
+            (data, empty.as_ref())
+        };
 
-        // Append BOC
+        // Pack the first chunk
         payload.extend_from_slice(data);
+        trace!("Serialized payload length {:?}", payload.len());
 
-        let result = self.send_apdu(commands::SIGN_TRANSACTION, P1_CONFIRM, 0, &payload)?;
+        let p2 = if remaining_data.is_empty() {
+            0
+        } else {
+            P2_MORE
+        };
+
+        let p1 = P1_CONFIRM;
+        let mut result = self.send_apdu(commands::SIGN_TRANSACTION, p1, p2, &payload)?;
+
+        // Pack and send the remaining chunks
+        if !remaining_data.is_empty() {
+            let mut chunks: Vec<_> = remaining_data
+                .chunks(MAX_CHUNK_SIZE)
+                .map(|data| {
+                    let payload = data.to_vec();
+                    let p2 = P2_EXTEND | P2_MORE;
+                    (p2, payload)
+                })
+                .collect();
+
+            // Clear the P2_MORE bit on the last item.
+            chunks.last_mut().unwrap().0 &= !P2_MORE;
+
+            for (p2, payload) in chunks {
+                result = self.send_apdu(
+                    commands::SIGN_TRANSACTION,
+                    p1,
+                    p2,
+                    &payload,
+                )?;
+            }
+        }
 
         if result.len() != SIGNATURE_LENGTH + 1 {
             return Err(RemoteWalletError::Protocol(
@@ -537,7 +573,7 @@ pub fn get_ledger_from_info(
     info: RemoteWalletInfo,
     keypair_name: &str,
     wallet_manager: &RemoteWalletManager,
-) -> Result<Arc<LedgerWallet>, RemoteWalletError> {
+) -> Result<Rc<LedgerWallet>, RemoteWalletError> {
     let devices = wallet_manager.list_devices();
     let mut matches = devices
         .iter()
