@@ -30,6 +30,7 @@ const P1_CONFIRM: u8 = 0x01;
 const P2_EXTEND: u8 = 0x01;
 const P2_MORE: u8 = 0x02;
 const MAX_CHUNK_SIZE: usize = 255;
+const MAX_DATA_LEN: usize = 1024;
 
 const APDU_SUCCESS_CODE: usize = 0x9000;
 
@@ -442,6 +443,12 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         meta: SignTransactionMeta,
         data: &[u8],
     ) -> Result<Signature, RemoteWalletError> {
+        if data.len() > MAX_DATA_LEN {
+            return Err(RemoteWalletError::InvalidInput(
+                "Message to sign is too long".to_string(),
+            ));
+        }
+
         // Strip BOC magic
         let data = match data.strip_prefix(&[0xB5, 0xEE, 0x9C, 0x72]) {
             Some(data) => data,
