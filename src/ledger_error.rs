@@ -116,6 +116,18 @@ pub enum LedgerError {
     #[error("Everscale invalid wallet type error on Ledger")]
     EverscaleInvalidWalletType = 0x6b15,
 
+    #[error("Everscale invalid ticker length on Ledger")]
+    EverscaleInvalidTickerLength = 0x6b16,
+
+    #[error("Everscale invalid cell on Ledger")]
+    EverscaleInvalidCell = 0x6b17,
+
+    #[error("Everscale invalid contract on Ledger")]
+    EverscaleInvalidContract = 0x6b18,
+
+    #[error("Everscale invalid message on Ledger")]
+    EverscaleInvalidMessage = 0x6b19,
+
     #[error("Ledger received unimplemented instruction")]
     UnimplementedInstruction = 0x6d00,
 
