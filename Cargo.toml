@@ -8,6 +8,7 @@ license-file = "LICENSE"
 
 [dependencies]
 anyhow = "1.0.66"
+base64 = "0.21.3"
 console = "0.15.0"
 dialoguer = "0.10.2"
 hidapi = { version = "2.2", default-features = false, optional = true }

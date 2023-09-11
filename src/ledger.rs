@@ -528,6 +528,9 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
             chunks.last_mut().unwrap().0 &= !P2_MORE;
 
             for (p2, payload) in chunks {
+                println!("p1 - {}, p2 - {}", p1, p2);
+                println!("Send chunk: {}", base64::encode(&payload));
+
                 result = self.send_apdu(
                     commands::SIGN_TRANSACTION,
                     p1,
