@@ -133,4 +133,40 @@ pub enum LedgerError {
 
     #[error("Ledger received invalid CLA")]
     InvalidCla = 0x6e00,
+
+    #[error("Everscale invalid contract on Ledger 1")]
+    EverscaleInvalidContract1 = 0x1B01,
+
+    #[error("Everscale invalid contract on Ledger 2")]
+    EverscaleInvalidContract2 = 0x1B02,
+
+    #[error("Everscale invalid contract on Ledger 3")]
+    EverscaleInvalidContract3 = 0x1B03,
+
+    #[error("Everscale invalid contract on Ledger 4")]
+    EverscaleInvalidContract4 = 0x1B04,
+
+    #[error("Everscale invalid contract on Ledger 5")]
+    EverscaleInvalidContract5 = 0x1B05,
+
+    #[error("Everscale invalid contract on Ledger 6")]
+    EverscaleInvalidContract6 = 0x1B06,
+
+    #[error("Everscale invalid contract on Ledger 7")]
+    EverscaleInvalidContract7 = 0x1B07,
+
+    #[error("Everscale invalid contract on Ledger 8")]
+    EverscaleInvalidContract8 = 0x1B08,
+
+    #[error("Everscale invalid contract on Ledger 9")]
+    EverscaleInvalidContract9 = 0x1B09,
+
+    #[error("Everscale invalid contract on Ledger 10")]
+    EverscaleInvalidContract10 = 0x1B10,
+
+    #[error("Everscale invalid contract on Ledger 11")]
+    EverscaleInvalidContract11 = 0x1B011,
+
+    #[error("Everscale invalid contract on Ledger 12")]
+    EverscaleInvalidContract12 = 0x1B012,
 }
