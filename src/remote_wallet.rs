@@ -1,8 +1,8 @@
-use std::rc::Rc;
-use {crate::ledger::is_valid_ledger, parking_lot::Mutex};
+#[cfg(feature = "hidapi")]
+use {crate::ledger::is_valid_ledger, parking_lot::Mutex, std::sync::Arc};
 use {
     crate::{
-        ledger::{LedgerWallet, WalletType, SignTransactionMeta},
+        ledger::{LedgerWallet, SignTransactionMeta, WalletType},
         ledger_error::LedgerError,
         locator::{Locator, LocatorError, Manufacturer},
     },
@@ -10,7 +10,7 @@ use {
     log::*,
     parking_lot::RwLock,
     std::{
-        sync::Arc,
+        rc::Rc,
         time::{Duration, Instant},
     },
     thiserror::Error,
@@ -28,11 +28,11 @@ pub enum RemoteWalletError {
     #[error("device type mismatch")]
     DeviceTypeMismatch,
 
-    #[error("signature error")]
-    Signature(String),
-
     #[error("device with non-supported product ID or vendor ID was detected")]
     InvalidDevice,
+
+    #[error("signature error")]
+    Signature(String),
 
     #[error("invalid input: {0}")]
     InvalidInput(String),
@@ -59,6 +59,7 @@ pub enum RemoteWalletError {
     LocatorError(#[from] LocatorError),
 }
 
+#[cfg(feature = "hidapi")]
 impl From<hidapi::HidError> for RemoteWalletError {
     fn from(err: hidapi::HidError) -> RemoteWalletError {
         RemoteWalletError::Hid(err.to_string())
@@ -73,12 +74,14 @@ impl From<SignatureError> for RemoteWalletError {
 
 /// Collection of connected RemoteWallets
 pub struct RemoteWalletManager {
+    #[cfg(feature = "hidapi")]
     usb: Arc<Mutex<hidapi::HidApi>>,
     devices: RwLock<Vec<Device>>,
 }
 
 impl RemoteWalletManager {
     /// Create a new instance.
+    #[cfg(feature = "hidapi")]
     pub fn new(usb: Arc<Mutex<hidapi::HidApi>>) -> Rc<Self> {
         Rc::new(Self {
             usb,
@@ -88,6 +91,7 @@ impl RemoteWalletManager {
 
     /// Repopulate device list
     /// Note: this method iterates over and updates all devices
+    #[cfg(feature = "hidapi")]
     pub fn update_devices(&self) -> Result<usize, RemoteWalletError> {
         let mut usb = self.usb.lock();
         usb.refresh_devices()?;
@@ -198,11 +202,7 @@ pub trait RemoteWallet<T> {
     }
 
     /// Sign message hash
-    fn sign_message(
-        &self,
-        account: u32,
-        data: &[u8],
-    ) -> Result<Signature, RemoteWalletError> {
+    fn sign_message(&self, account: u32, data: &[u8]) -> Result<Signature, RemoteWalletError> {
         unimplemented!();
     }
 
@@ -289,6 +289,7 @@ pub fn is_valid_hid_device(usage_page: u16, interface_number: i32) -> bool {
 }
 
 /// Helper to initialize hidapi and RemoteWalletManager
+#[cfg(feature = "hidapi")]
 pub fn initialize_wallet_manager() -> Result<Rc<RemoteWalletManager>, RemoteWalletError> {
     let hidapi = Arc::new(Mutex::new(hidapi::HidApi::new()?));
     Ok(RemoteWalletManager::new(hidapi))
