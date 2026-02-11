@@ -486,9 +486,13 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         if meta.workchain_id.is_some() {
             metadata |= 2;
         }
-        if meta.chain_id.is_some() {
-            metadata |= 8;
-        }
+        let sign_mode = match meta.sign_mode {
+            SignMode::Empty => 0u8,
+            SignMode::SignatureId(_) => 1u8,
+            SignMode::SignatureDomain => 2u8,
+            SignMode::SignatureDomainL2(_) => 3u8,
+        };
+        metadata |= sign_mode << 3;
         payload.push(metadata);
 
         if let Some(current_wallet_type) = meta.current_wallet_type {
@@ -499,8 +503,14 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
             payload.push(workchain_id);
         }
 
-        if let Some(chain_id) = meta.chain_id {
-            payload.extend_from_slice(&chain_id.to_be_bytes());
+        match meta.sign_mode {
+            SignMode::SignatureId(global_id) => {
+                payload.extend_from_slice(&global_id.to_be_bytes());
+            }
+            SignMode::SignatureDomainL2(global_id) => {
+                payload.extend_from_slice(&global_id.to_le_bytes());
+            }
+            _ => {}
         }
 
         // Check to see if this data needs to be split up and
@@ -554,21 +564,35 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
     }
 }
 
+/// Sign mode encoded in metadata bits 3-4.
+#[derive(Clone, Copy, Default)]
+pub enum SignMode {
+    /// No prefix, sign root hash only (0b00)
+    Empty,
+    /// Prefix = global_id (0b01)
+    SignatureId(u32),
+    /// Prefix = SHA256(0x0e1d571b) (0b10)
+    #[default]
+    SignatureDomain,
+    /// Prefix = SHA256(0x71b34ee1 + global_id) (0b11)
+    SignatureDomainL2(u32),
+}
+
 #[derive(Clone, Copy, Default)]
 pub struct SignTransactionMeta {
-    chain_id: Option<u32>,
+    sign_mode: SignMode,
     workchain_id: Option<u8>,
     current_wallet_type: Option<WalletType>,
 }
 
 impl SignTransactionMeta {
     pub fn new(
-        chain_id: Option<u32>,
+        sign_mode: SignMode,
         workchain_id: Option<u8>,
         current_wallet_type: Option<WalletType>,
     ) -> Self {
         Self {
-            chain_id,
+            sign_mode,
             workchain_id,
             current_wallet_type,
         }
