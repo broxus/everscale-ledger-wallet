@@ -489,8 +489,7 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
         let sign_mode = match meta.sign_mode {
             SignMode::Empty => 0u8,
             SignMode::SignatureId(_) => 1u8,
-            SignMode::SignatureDomain => 2u8,
-            SignMode::SignatureDomainL2(_) => 3u8,
+            SignMode::SignatureDomain(_) => 2u8,
         };
         metadata |= sign_mode << 3;
         payload.push(metadata);
@@ -507,7 +506,7 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
             SignMode::SignatureId(global_id) => {
                 payload.extend_from_slice(&global_id.to_be_bytes());
             }
-            SignMode::SignatureDomainL2(global_id) => {
+            SignMode::SignatureDomain(global_id) => {
                 payload.extend_from_slice(&global_id.to_le_bytes());
             }
             _ => {}
@@ -568,14 +567,12 @@ impl RemoteWallet<hidapi::DeviceInfo> for LedgerWallet {
 #[derive(Clone, Copy, Default)]
 pub enum SignMode {
     /// No prefix, sign root hash only (0b00)
-    Empty,
-    /// Prefix = global_id (0b01)
-    SignatureId(u32),
-    /// Prefix = SHA256(0x0e1d571b) (0b10)
     #[default]
-    SignatureDomain,
-    /// Prefix = SHA256(0x71b34ee1 + global_id) (0b11)
-    SignatureDomainL2(u32),
+    Empty,
+    /// Prefix = global_id BE (0b01)
+    SignatureId(u32),
+    /// Prefix = SHA256(0x71b34ee1_LE + global_id_LE) (0b10)
+    SignatureDomain(u32),
 }
 
 #[derive(Clone, Copy, Default)]
