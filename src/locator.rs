@@ -8,16 +8,11 @@ use {
     uriparse::URIReferenceError,
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub enum Manufacturer {
+    #[default]
     Unknown,
     Ledger,
-}
-
-impl Default for Manufacturer {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 const MANUFACTURER_UNKNOWN: &str = "unknown";
